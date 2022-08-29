@@ -78,7 +78,7 @@ class WeaklyReports(object):
         if len(events_count) != 6:
             print("events_count have wrong length")
         slide = self._prs.slides[8]  # type:pptx.slide.Slide
-        shape = None  # type: pptx.shapes.base.BaseShape
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
         index = 0
         for shape in slide.shapes:
             '''
@@ -115,37 +115,94 @@ class WeaklyReports(object):
     # 2. 巡检
     def slide_2(self):
         slide = self._prs.slides[9]  # type:pptx.slide.Slide
-        shape = None  # type: pptx.shapes.base.BaseShape
-        index = 0
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
         for shape in slide.shapes:
             if shape.has_table:
-                pass
-
+                tb = shape.table  # type: pptx.table.Table
+                tb.cell(3, 1).text = "11"  # 巡检次数
+                tb.cell(3, 2).text = "0"  # 异常次数
+                tb.cell(3, 3).text = "6"  # 报告提交次数
+                tb.cell(3, 5).text = "√"  # 周一上午
+                tb.cell(4, 5).text = "√"  # 周一下午
+                tb.cell(3, 7).text = "√"  # 周二上午
+                tb.cell(4, 7).text = "√"  # 周二下午
+                tb.cell(3, 9).text = "√"  # 周三上午
+                tb.cell(4, 9).text = "√"  # 周三下午
+                tb.cell(3, 11).text = "√"  # 周四上午
+                tb.cell(4, 11).text = "√"  # 周四下午
+                tb.cell(3, 13).text = "√"  # 周五上午
+                tb.cell(4, 13).text = "√"  # 周五下午
+                tb.cell(3, 15).text = "√"  # 周六上午
+                tb.cell(4, 15).text = "√"  # 周六下午
+                tb.cell(3, 17).text = "√"  # 周日上午
+                tb.cell(4, 17).text = "√"  # 周日下午
 
     # 3. 变更
-    def slide_3(self):
-        pass
+    def slide_3(self, content: list):
+        slide = self._prs.slides[10]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            if shape.has_table:
+                tb = shape.table  # type: pptx.table.Table
+                for row_idx in range(1, len(tb.rows)):
+                    for col_idx in range(len(tb.columns)):
+                        tb.cell(row_idx, col_idx).text = content[row_idx - 1][col_idx]
 
     # 4. 支撑发版
-    def slide_4(self):
-        pass
+    def slide_4(self, content: list):
+        slide = self._prs.slides[11]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            if shape.has_table:
+                tb = shape.table  # type: pptx.table.Table
+                for row_idx in range(1, len(tb.rows)):
+                    for col_idx in range(len(tb.columns)):
+                        tb.cell(row_idx, col_idx).text = content[row_idx - 1][col_idx]
 
     # 5. 资源权限管理
-    def slide_5(self):
-        pass
+    def slide_5(self, content: list):
+        slide = self._prs.slides[12]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            if shape.has_table:
+                tb = shape.table  # type: pptx.table.Table
+                for row_idx in range(1, len(tb.rows)):
+                    for col_idx in range(len(tb.columns)):
+                        tb.cell(row_idx, col_idx).text = content[row_idx - 1][col_idx]
 
     # 6. 配合操作及排障
-    def slide_6(self):
-        pass
+    def slide_6(self, content: list):
+        slide = self._prs.slides[13]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            if shape.has_table:
+                tb = shape.table  # type: pptx.table.Table
+                for row_idx in range(1, len(tb.rows)):
+                    for col_idx in range(len(tb.columns)):
+                        tb.cell(row_idx, col_idx).text = content[row_idx - 1][col_idx]
 
     # 7. 问题及告警
-    def slide_7(self):
-        pass
+    def slide_7(self, content: list):
+        slide = self._prs.slides[14]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            if shape.has_table:
+                tb = shape.table  # type: pptx.table.Table
+                for row_idx in range(1, len(tb.rows)):
+                    for col_idx in range(len(tb.columns)):
+                        tb.cell(row_idx, col_idx).text = content[row_idx - 1][col_idx]
 
     # 8. 运行情况分析
     def slide_8(self):
         pass
 
     # 9. 下周工作计划
-    def slide_9(self):
-        pass
+    def slide_9(self, content: list):
+        slide = self._prs.slides[25]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            if shape.has_table:
+                tb = shape.table  # type: pptx.table.Table
+                for row_idx in range(1, len(tb.rows)):
+                    for col_idx in range(len(tb.columns)):
+                        tb.cell(row_idx, col_idx).text = content[row_idx - 1][col_idx]
