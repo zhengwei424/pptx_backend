@@ -194,7 +194,15 @@ class WeaklyReports(object):
 
     # 8. 运行情况分析
     def slide_8(self):
-        pass
+        slide = self._prs.slides[18]  # type:pptx.slide.Slide
+        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        for shape in slide.shapes:
+            # if shape.has_table: # 获取现有shape的坐标及基本参数（宽度高度等）
+            #     print("shape: {}, left: {}, top: {}, height: {}, width: {}".format(shape, shape.left/360000, shape.top/360000,
+            #                                                                        shape.height/360000, shape.width/360000))
+            if shape.has_chart:
+                chart = shape.chart  # type: pptx.chart.chart.Chart
+                print(chart.chart_title.text_frame.text)
 
     # 9. 下周工作计划
     def slide_9(self, content: list):
