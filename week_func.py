@@ -5,6 +5,10 @@ import pptx.table
 import pptx.chart.chart
 import pptx.text.text
 from pptx import Presentation
+from pptx.enum.dml import MSO_COLOR_TYPE
+from pptx.dml.color import RGBColor
+from pptx.util import Pt
+from pptx.enum.lang import MSO_LANGUAGE_ID
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.chart.data import CategoryChartData
 
@@ -41,20 +45,39 @@ class PresentationBuilder(object):
         self.xml_slides.remove(slideIdList[index])
 
 
-def table_render(*args, **kwargs):
-    prs = None
-    slide = None
-    # 分解kwargs
-    for k, v in kwargs.items():
-        if k == "prs":
-            prs = kwargs[k]
-        if k == "slide":
-            slide = kwargs[k]
+class TableAttribute:
+    def __init__(self, table):
+        self.tb = table  # type: pptx.table.Table
 
-    # 获取slide的宽度和高度
-    prs_width = prs.slide_width
-    prs_height = prs.slide_height
-    prs.slides.add_slide(prs.slide_masters[0].slide_layouts[1])
+    def set_cell_font(self,
+                      cell: pptx.table._Cell,
+                      fontName="微软雅黑",
+                      fontSize=8,
+                      fontBold=False,
+                      fontColor="000000",
+                      cellbgColor=None):
+        # 语言设置，NONE表示移除所有语言设置
+        cell.text_frame.paragraphs[0].font.language_id = MSO_LANGUAGE_ID.NONE
+        # 字体
+        cell.text_frame.paragraphs[0].font.name = fontName
+        # 字体大小
+        cell.text_frame.paragraphs[0].font.size = Pt(int(fontSize))
+        # 是否加粗
+        cell.text_frame.paragraphs[0].font.bold = fontBold
+        # 字体颜色类型(只读)
+        # print(cell.text_frame.paragraphs[0].font.color.type)
+        # 用RGB表示字体颜色（两种方式）
+        cell.text_frame.paragraphs[0].font.color.rgb = RGBColor.from_string(fontColor)
+        # 前景色(就是字体颜色）
+        # cell.text_frame.paragraphs[0].font.fill.fore_color.rgb = RGBColor.from_string(fontColor)
+        # 字体颜色透明度
+        cell.text_frame.paragraphs[0].font.color.brightness = -1  # 取值范围-1~1，暗->亮
+        if cellbgColor:
+            # 填充背景色
+            cell.text_frame.paragraphs[0].font.fill.back_color.rgb = RGBColor.from_string(cellbgColor)
+        else:
+            # 无填充
+            cell.text_frame.paragraphs[0].font.fill.background()
 
 
 def change_table_data():
@@ -76,7 +99,7 @@ class WeaklyReports(object):
     # 1. 运维工作统计（次数）
     def slide_1(self, events_count: list):  #
         if len(events_count) != 6:
-            print("events_count have wrong length")
+            print("events_count length is 6,Please check out.")
         slide = self._prs.slides[8]  # type:pptx.slide.Slide
         shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
         index = 0
@@ -113,13 +136,17 @@ class WeaklyReports(object):
             index += 1
 
     # 2. 巡检
-    def slide_2(self):
+    def slide_2(self, weekly_inspect: list):
+        if len(weekly_inspect) != 17:
+            print("weekly_inspect length is 17,Please check out.")
         slide = self._prs.slides[9]  # type:pptx.slide.Slide
         shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
         for shape in slide.shapes:
             if shape.has_table:
                 tb = shape.table  # type: pptx.table.Table
+                test = TableAttribute(tb)
                 tb.cell(3, 1).text = "11"  # 巡检次数
+                test.set_cell_font(tb.cell(3, 1), fontBold=True, cellbgColor="CDC839", fontColor="3C6F6A")
                 tb.cell(3, 2).text = "0"  # 异常次数
                 tb.cell(3, 3).text = "6"  # 报告提交次数
                 tb.cell(3, 5).text = "√"  # 周一上午
@@ -206,7 +233,7 @@ class WeaklyReports(object):
 
     # 9. 下周工作计划
     def slide_9(self, content: list):
-        slide = self._prs.slides[25]  # type:pptx.slide.Slide
+        slide = self._prs.slides[25]  # type: pptx.slide.Slide
         shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
         for shape in slide.shapes:
             if shape.has_table:
