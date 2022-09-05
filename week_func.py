@@ -9,6 +9,7 @@ from pptx.enum.dml import MSO_COLOR_TYPE
 from pptx.dml.color import RGBColor
 from pptx.util import Pt
 from pptx.enum.lang import MSO_LANGUAGE_ID
+from pptx.enum.dml import MSO_FILL_TYPE
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.chart.data import CategoryChartData
 
@@ -49,9 +50,10 @@ class TableAttribute:
     def __init__(self, table):
         self.tb = table  # type: pptx.table.Table
 
+    # 先写内容，后改样式，否则可能出现样式不生效问题，如字体之类的？？？
     def set_cell_font(self,
                       cell: pptx.table._Cell,
-                      fontName="微软雅黑",
+                      fontName="FangSong",
                       fontSize=8,
                       fontBold=False,
                       fontColor="000000",
@@ -64,20 +66,27 @@ class TableAttribute:
         cell.text_frame.paragraphs[0].font.size = Pt(int(fontSize))
         # 是否加粗
         cell.text_frame.paragraphs[0].font.bold = fontBold
-        # 字体颜色类型(只读)
-        # print(cell.text_frame.paragraphs[0].font.color.type)
+
         # 用RGB表示字体颜色（两种方式）
-        cell.text_frame.paragraphs[0].font.color.rgb = RGBColor.from_string(fontColor)
-        # 前景色(就是字体颜色）
-        # cell.text_frame.paragraphs[0].font.fill.fore_color.rgb = RGBColor.from_string(fontColor)
+        # cell.text_frame.paragraphs[0].font.color.rgb = RGBColor.from_string(fontColor)
+        # 设置前景色或背景色之前需要执行
+        # cell.text_frame.paragraphs[0].font.fill.patterned()  # 图案填充（可以设置前景色和背景色）
+        cell.text_frame.paragraphs[0].font.fill.solid()  # 纯色填充（只能设置前景色）
+        # 字体前景色(就是字体颜色）
+        cell.text_frame.paragraphs[0].font.fill.fore_color.rgb = RGBColor.from_string(fontColor)
+        # 字体背景色（就是文字本身的背景，不是整个cell）
+        # cell.text_frame.paragraphs[0].font.fill.back_color.rgb = RGBColor.from_string(cellbgColor)
         # 字体颜色透明度
-        cell.text_frame.paragraphs[0].font.color.brightness = -1  # 取值范围-1~1，暗->亮
+        # cell.text_frame.paragraphs[0].font.color.brightness = -1  # 取值范围-1~1，暗->亮
         if cellbgColor:
-            # 填充背景色
-            cell.text_frame.paragraphs[0].font.fill.back_color.rgb = RGBColor.from_string(cellbgColor)
+            # 填充cell前景色
+            # cell.fill.patterned()  # 图案填充（可以设置cell前景色和背景色）
+            cell.fill.solid()  # 纯色填充（只能设置cell前景色，但是对cell中的text而言也是背景）
+            # cell.fill.back_color.rgb = RGBColor.from_string(cellbgColor)
+            cell.fill.fore_color.rgb = RGBColor.from_string(cellbgColor)
         else:
-            # 无填充
-            cell.text_frame.paragraphs[0].font.fill.background()
+            # cell颜色无填充
+            cell.fill.background()
 
 
 def change_table_data():
@@ -146,7 +155,8 @@ class WeaklyReports(object):
                 tb = shape.table  # type: pptx.table.Table
                 test = TableAttribute(tb)
                 tb.cell(3, 1).text = "11"  # 巡检次数
-                test.set_cell_font(tb.cell(3, 1), fontBold=True, cellbgColor="CDC839", fontColor="3C6F6A")
+                test.set_cell_font(tb.cell(3, 1), fontBold=False, cellbgColor="CDC839", fontColor="3C6F6A")
+                # test.set_cell_font(tb.cell(3, 1), fontBold=True, cellbgColor="", fontColor="3C6F6A")
                 tb.cell(3, 2).text = "0"  # 异常次数
                 tb.cell(3, 3).text = "6"  # 报告提交次数
                 tb.cell(3, 5).text = "√"  # 周一上午
