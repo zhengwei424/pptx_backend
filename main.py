@@ -1,7 +1,6 @@
 import pptx
 from pptx import Presentation
 from pptx.presentation import Presentation as pptclass
-from pptx.util import Cm, Emu
 from week_func import PresentationBuilder, WeaklyReports
 
 if __name__ == '__main__':
@@ -17,4 +16,4 @@ if __name__ == '__main__':
     wr.slide_2(
         weekly_inspect=["100", "200", "300", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
     )
-    prs.save("test_1.pptx")
+    # prs.save("test_1.pptx")
