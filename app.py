@@ -2,12 +2,16 @@ import os
 from flask import Flask, flash, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
+
 UPLOAD_FOLDER = '/home/zhengwei/PycharmProjects/pptx_backend/files'
 ALLOWED_EXTENSIONS = {'pptx'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+
+def resp_file_upload(request_data):
+    file_content = request_data['']
 
 def allowed_file(filename):
     '''
@@ -18,8 +22,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_file():
+@app.route('/file/upload', methods=['GET', 'POST'])
+def file_upload():
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
