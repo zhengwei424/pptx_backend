@@ -23,3 +23,9 @@ cursor.close()
 # 关闭数据库
 conn.close()
 
+
+class MySQLHandler(pymysql.connections.Connection):
+    def __init__(self):
+        super(MySQLHandler, self).__init__()
+
+

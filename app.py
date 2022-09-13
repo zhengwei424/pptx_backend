@@ -1,17 +1,15 @@
 import os
-from flask import Flask, flash, request, redirect, url_for, send_from_directory
+from flask import Flask, flash, request, redirect, url_for, send_from_directory, jsonify
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-
-UPLOAD_FOLDER = '/home/zhengwei/PycharmProjects/pptx_backend/files'
+UPLOAD_FOLDER = 'static'
 ALLOWED_EXTENSIONS = {'pptx'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+CORS(app, supports_credentials=False)
 
-
-def resp_file_upload(request_data):
-    file_content = request_data['']
 
 def allowed_file(filename):
     '''
@@ -22,46 +20,98 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/file/upload', methods=['GET', 'POST'])
-def file_upload():
-    if request.method == 'POST':
-        # check if the post request has the file part
-        if 'file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
-        file = request.files['file']
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('download_file', name=filename))
-    return '''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-    '''
+# 获取周报文件列表
+@app.route("/weeklyReports", methods=["GET"])
+def weekly_reports():
+    report_files = os.listdir('static/weeklyReports')
+    result = []
+    for file in report_files:
+        item = dict({
+            "name": str(file)
+        })
+        result.append(item)
+    return jsonify(result)
 
 
-@app.route('/uploads/<name>')
-def download_file(name):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], name)
+# 获取月报文件列表
+@app.route("/monthlyReports", methods=["GET"])
+def monthly_reports():
+    report_files = os.listdir('static/monthlyReports')
+    result = []
+    for file in report_files:
+        item = dict({
+            "name": str(file)
+        })
+        result.append(item)
+    return jsonify(result)
+
+
+# 上传周报
+@app.route('/weeklyReports/upload', methods=['GET', 'POST'])
+def weekly_reports_upload():
+    file = request.files.get("file")
+    # extra_args = dict(request.form)
+    resp_data = {}
+    if allowed_file(file.filename):
+        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + file.filename):
+            resp_data = {
+                "msg": file.filename + "文件已存在!"
+            }
+        else:
+            file.save(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + file.filename)
+            resp_data = {
+                "msg": file.filename + "文件上传成功!"
+            }
+    else:
+        resp_data = {
+            "msg": "只能上传后缀为.pptx的文件"
+        }
+
+    return jsonify(resp_data)
+
+
+# 上传月报
+@app.route('/monthlyReports/upload', methods=['GET', 'POST'])
+def monthly_reports_upload():
+    file = request.files.get("file")
+    # extra_args = dict(request.form)
+    resp_data = {}
+    if allowed_file(file.filename):
+        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + file.filename):
+            resp_data = {
+                "msg": file.filename + "文件已存在!"
+            }
+        else:
+            file.save(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + file.filename)
+            resp_data = {
+                "msg": file.filename + "文件上传成功!"
+            }
+    else:
+        resp_data = {
+            "msg": "只能上传后缀为.pptx的文件"
+        }
+
+    return jsonify(resp_data)
+
+
+# 下载周报
+@app.route('/weeklyReports/download/<filename>', methods=["GET"])
+def weekly_reports_download(filename):
+    # send_static_file会在static目录下寻找文件
+    return app.send_static_file("weeklyReports/" + filename)
+
+
+# 下载月报
+@app.route('/monthlyReports/download/<filename>', methods=["GET"])
+def monthly_reports_download(filename):
+    # send_static_file会在static目录下寻找文件
+    return app.send_static_file("monthlyReports/" + filename)
 
 
 @app.route("/")
 def hello_world():
-    return "<p>Hello, World!</p>"
+    return "<p>欢迎来到PPTX后台</p>"
 
 
 if __name__ == '__main__':
-    app.add_url_rule(
-        "/uploads/<name>", endpoint="download_file", build_only=True
-    )
-    app.run()
+    app.run(host="0.0.0.0", port=5000, debug=True)
