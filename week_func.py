@@ -12,6 +12,10 @@ from pptx.enum.lang import MSO_LANGUAGE_ID
 from pptx.enum.dml import MSO_FILL_TYPE
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.chart.data import CategoryChartData
+from pptx.util import Cm
+from pptx.shapes.placeholder import SlidePlaceholder
+from pptx.enum.chart import XL_LEGEND_POSITION, XL_CHART_TYPE, XL_DATA_LABEL_POSITION
+from pptx.chart.data import ChartData
 
 
 # presentation->slide->shapes->placeholder,graphfrm
@@ -231,15 +235,65 @@ class WeaklyReports(object):
 
     # 8. 运行情况分析
     def slide_8(self):
-        slide = self._prs.slides[18]  # type:pptx.slide.Slide
-        shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
-        for shape in slide.shapes:
-            # if shape.has_table: # 获取现有shape的坐标及基本参数（宽度高度等）
-            #     print("shape: {}, left: {}, top: {}, height: {}, width: {}".format(shape, shape.left/360000, shape.top/360000,
-            #                                                                        shape.height/360000, shape.width/360000))
-            if shape.has_chart:
-                chart = shape.chart  # type: pptx.chart.chart.Chart
-                print(chart.chart_title.text_frame.text)
+        # slide = self._prs.slides[18]  # type:pptx.slide.Slide
+        # shape = slide.shapes[0]  # type: pptx.shapes.base.BaseShape
+        # for shape in slide.shapes:
+        #     # if shape.has_table: # 获取现有shape的坐标及基本参数（宽度高度等）
+        #     #     print("shape: {}, left: {}, top: {}, height: {}, width: {}".format(shape, shape.left/360000, shape.top/360000,
+        #     #                                                                        shape.height/360000, shape.width/360000))
+        #     if shape.has_chart:
+        #         chart = shape.chart  # type: pptx.chart.chart.Chart
+        #         print(chart.chart_title.text_frame.text)
+        slide = self._prs.slides.add_slide(self._prs.slide_masters[0].slide_layouts[1])
+        # 根据数据长度设置表格的行列数（同时通过行高*行数，计算表格高度，并与模板对比，做表格当前页分割，或换页分割）！！！！！
+        x, y, cx, cy = Cm(7), Cm(2.2), Cm(5), Cm(2)
+        # x: 左边距，y: 上边距, cx: 单元格宽度, cy: 单元格高度
+        table = slide.shapes.add_table(3, 3, x, y, cx, cy).table
+        # 访问cell
+        table.cell(0, 0).text = "测试"
+        # 合并单元格(即this_cell.merge(other_cell))
+        # cell.merge(other_cell)
+        slidePlaceholder = slide.shapes[0]  # type: pptx.shapes.placeholder.SlidePlaceholder
+        slidePlaceholder.text = "hahahaha"
+
+        # cpu 扇形图
+        chart_cpu_data = ChartData()
+        chart_cpu_data.categories = ['已分配', '未分配']
+        chart_cpu_data.add_series('cpu', (0.25, 0.75))
+        chart_cpu = slide.shapes.add_chart(XL_CHART_TYPE.PIE, Cm(0.1), Cm(2.2), Cm(6), Cm(6), chart_cpu_data).chart
+
+        # 设置图例说明（会在图中标识已分配、未分配的颜色说明）
+        chart_cpu.has_legend = True
+        chart_cpu.legend.position = XL_LEGEND_POSITION.BOTTOM
+        chart_cpu.legend.include_in_layout = False
+
+        # 设置标题（不设置，默认值是add_series中的列标题"cpu"）
+        chart_cpu.has_title = True
+        chart_cpu.chart_title.text_frame.text = "外网微服务区CPU(核)"
+        chart_cpu.chart_title.text_frame.fit_text(font_family='Microsoft YaHei', max_size='12', bold=False,
+                                                  italic=False, font_file=None)
+
+        chart_cpu.plots[0].has_data_labels = True
+        chart_cpu_data_labels = chart_cpu.plots[0].data_labels
+        chart_cpu_data_labels.number_format = '0%'
+        chart_cpu_data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
+
+        print("chart_has_legend: ", chart_cpu.has_legend, chart_cpu.legend)
+        print("chart_has_title: ", chart_cpu.has_title, chart_cpu.chart_title.has_text_frame)
+        # memory 扇形图
+        chart_mem_data = ChartData()
+        chart_mem_data.categories = ['已分配', '未分配']
+        chart_mem_data.add_series('mem', (0.25, 0.75))
+        chart_mem = slide.shapes.add_chart(XL_CHART_TYPE.PIE, Cm(0.1), Cm(8.3), Cm(6), Cm(6), chart_mem_data).chart
+        # 设置图例说明（会在图中标识已分配、未分配的颜色说明）
+        chart_mem.has_legend = True
+        chart_mem.legend.position = XL_LEGEND_POSITION.BOTTOM
+        chart_mem.legend.include_in_layout = False
+
+        chart_mem.plots[0].has_data_labels = True
+        chart_mem_data_labels = chart_mem.plots[0].data_labels
+        chart_mem_data_labels.number_format = '0%'
+        chart_mem_data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
 
     # 9. 下周工作计划
     def slide_9(self, content: list):
