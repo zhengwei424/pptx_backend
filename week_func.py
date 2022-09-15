@@ -15,6 +15,7 @@ from pptx.chart.data import CategoryChartData
 from pptx.util import Cm
 from pptx.shapes.placeholder import SlidePlaceholder
 from pptx.enum.chart import XL_LEGEND_POSITION, XL_CHART_TYPE, XL_DATA_LABEL_POSITION
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.chart.data import ChartData
 
 
@@ -259,37 +260,46 @@ class WeaklyReports(object):
         # cpu 扇形图
         chart_cpu_data = ChartData()
         chart_cpu_data.categories = ['已分配', '未分配']
-        chart_cpu_data.add_series('cpu', (0.25, 0.75))
-        chart_cpu = slide.shapes.add_chart(XL_CHART_TYPE.PIE, Cm(0.1), Cm(2.2), Cm(6), Cm(6), chart_cpu_data).chart
+        chart_cpu_data.add_series('xxx1', (0.25, 0.75))
+        chart_cpu_data.add_series('xxx2', (0.35, 0.65))
+        chart_cpu_data.add_series('xxx3', (0.45, 0.55))
+        shape_cpu = slide.shapes.add_chart(XL_CHART_TYPE.PIE, Cm(0.1), Cm(2.2), Cm(6), Cm(6), chart_cpu_data)
+        chart_cpu = shape_cpu.chart
 
         # 设置图例说明（会在图中标识已分配、未分配的颜色说明）
         chart_cpu.has_legend = True
         chart_cpu.legend.position = XL_LEGEND_POSITION.BOTTOM
         chart_cpu.legend.include_in_layout = False
+        chart_cpu.font.name = 'FangSong'
+        chart_cpu.font.size = Pt(10)
 
-        # 设置标题（不设置，默认值是add_series中的列标题"cpu"）
+        # 设置标题（不设置，默认值是add_series中的列标题"cpu"）-> "ChartTitle" has no attribute "width"??
         chart_cpu.has_title = True
         chart_cpu.chart_title.has_text_frame = True
-        chart_cpu.chart_title.text_frame.text = "外网微服务区CPU(核)"
-        chart_cpu.chart_title.text_frame.fit_text(font_family='Microsoft YaHei', max_size='12', bold=False,
+        chart_cpu.chart_title.text_frame.text = "外网微服务区CPU(%)"
+        chart_cpu.chart_title.text_frame.auto_size = MSO_AUTO_SIZE.NONE
+        chart_cpu.chart_title.text_frame.word_wrap = None
+        chart_cpu.chart_title.text_frame.fit_text(font_family='FangSong', max_size='12', bold=False,
                                                   italic=False, font_file=None)
+
 
         chart_cpu.plots[0].has_data_labels = True
         chart_cpu_data_labels = chart_cpu.plots[0].data_labels
         chart_cpu_data_labels.number_format = '0%'
-        chart_cpu_data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
+        chart_cpu_data_labels.position = XL_DATA_LABEL_POSITION.CENTER
 
-        print("chart_has_legend: ", chart_cpu.has_legend, chart_cpu.legend)
-        print("chart_has_title: ", chart_cpu.has_title, chart_cpu.chart_title.has_text_frame)
         # memory 扇形图
         chart_mem_data = ChartData()
         chart_mem_data.categories = ['已分配', '未分配']
-        chart_mem_data.add_series('mem', (0.25, 0.75))
+        chart_mem_data.add_series('外网微服务区内存(%)', (0.25, 0.75))
         chart_mem = slide.shapes.add_chart(XL_CHART_TYPE.PIE, Cm(0.1), Cm(8.3), Cm(6), Cm(6), chart_mem_data).chart
+
         # 设置图例说明（会在图中标识已分配、未分配的颜色说明）
         chart_mem.has_legend = True
         chart_mem.legend.position = XL_LEGEND_POSITION.BOTTOM
         chart_mem.legend.include_in_layout = False
+        chart_mem.font.name = 'FangSong'
+        chart_mem.font.size = Pt(10)
 
         chart_mem.plots[0].has_data_labels = True
         chart_mem_data_labels = chart_mem.plots[0].data_labels
