@@ -269,6 +269,7 @@ class WeaklyReports(object):
 
         # 设置标题（不设置，默认值是add_series中的列标题"cpu"）
         chart_cpu.has_title = True
+        chart_cpu.chart_title.has_text_frame = True
         chart_cpu.chart_title.text_frame.text = "外网微服务区CPU(核)"
         chart_cpu.chart_title.text_frame.fit_text(font_family='Microsoft YaHei', max_size='12', bold=False,
                                                   italic=False, font_file=None)
