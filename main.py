@@ -21,8 +21,8 @@ if __name__ == '__main__':
     # wr.slide_2(
     #     weekly_inspect=["100", "200", "300", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
     # )
-
-    wr.slide_8()
-    prs.save("chart_2.pptx")
+    #
+    # wr.slide_8()
+    # prs.save("chart_2.pptx")
 
 
