@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pptx import Presentation
 from week_func import SetWeaklyReport
-from tool_func import generate_table_data, insert_slide
+from tool_func import generate_table_data
 from month_func import GetMonthlyReportsData, SetMonthlyReport
 
 UPLOAD_FOLDER = 'static'
@@ -44,6 +44,7 @@ def weekly_reports():
 @app.route("/monthlyReports", methods=["GET"])
 def monthly_reports():
     report_files = os.listdir('static/monthlyReports')
+    report_files.sort()
     result = []
     for file in report_files:
         item = dict({
