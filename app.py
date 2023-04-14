@@ -1,19 +1,17 @@
-import os
+import os, sys
 import json
-
 import pptx
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from pptx import Presentation
 from week_func import SetWeaklyReport
 from tool_func import generate_table_data
 from month_func import GetMonthlyReportsData, SetMonthlyReport
 
-UPLOAD_FOLDER = 'static'
 ALLOWED_EXTENSIONS = {'pptx'}
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app = Flask(__name__, static_folder="static", template_folder="template", static_url_path="")
+app.config['UPLOAD_FOLDER'] = "data"
 CORS(app, supports_credentials=True)
 
 
@@ -29,7 +27,7 @@ def allowed_file(filename):
 # 获取周报文件列表
 @app.route("/weeklyReports", methods=["GET"])
 def weekly_reports():
-    report_files = os.listdir('static/weeklyReports')
+    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/weeklyReports")
     report_files.sort()
     result = []
     for file in report_files:
@@ -40,10 +38,45 @@ def weekly_reports():
     return jsonify(result)
 
 
+# 获取周报json文件列表
+@app.route("/weeklyReportsJson", methods=["GET"])
+def weekly_reports_json():
+    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData")
+    report_files.sort()
+    result = []
+    for file in report_files:
+        content = ''
+        with open('data/historyWeeklyData/' + file, mode='r', encoding='UTF-8') as f:
+            line = f.readline()
+            while line:
+                content += line
+        item = dict({
+            "name": str(file),
+            "content": content
+        })
+        result.append(item)
+        print(result)
+    return jsonify(result)
+
+
 # 获取月报文件列表
 @app.route("/monthlyReports", methods=["GET"])
 def monthly_reports():
-    report_files = os.listdir('static/monthlyReports')
+    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/monthlyReports")
+    report_files.sort()
+    result = []
+    for file in report_files:
+        item = dict({
+            "name": str(file)
+        })
+        result.append(item)
+    return jsonify(result)
+
+
+# 获取月报汇总文件列表
+@app.route("/monthlySummaryReports", methods=["GET"])
+def monthly_summary_reports():
+    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/monthlySummaryReports")
     report_files.sort()
     result = []
     for file in report_files:
@@ -106,16 +139,19 @@ def monthly_reports_upload():
 @app.route('/weeklyReports/download/<filename>', methods=["GET"])
 def weekly_reports_download(filename):
     # send_static_file会在static目录下寻找文件
-    return app.send_static_file("weeklyReports/" + filename)
+    # return app.send_static_file("weeklyReports/" + filename)
+    return send_from_directory(directory=app.config['UPLOAD_FOLDER'] + "/weeklyReports/", path=filename)
 
 
 # 下载月报
 @app.route('/monthlyReports/download/<filename>', methods=["GET"])
 def monthly_reports_download(filename):
     # send_static_file会在static目录下寻找文件
-    return app.send_static_file("monthlyReports/" + filename)
+    # return app.send_static_file("monthlyReports/" + filename)
+    return send_from_directory(directory=app.config['UPLOAD_FOLDER'] + "/monthlyReports/", path=filename)
 
 
+# 生成周报
 @app.route("/weeklyReportsData", methods=["POST"])
 def generate_weekly_report():
     # request.json是一个字典，接收post请求的data数据
@@ -124,18 +160,21 @@ def generate_weekly_report():
     year = post_data.get("formdata").get("year")
     month = post_data.get("formdata").get("month")
     week = post_data.get("formdata").get("week")
+    # 通过周报的json数据重新生成周报
+    weekly_report_json_data = post_data.get("formdata").get("weekly_report_json_data")
 
     # 响应消息
     msg = ""
     historyWeeklyDataFileName = year + month + week + ".json"
-    if os.path.exists("./static/historyWeeklyData/" + historyWeeklyDataFileName):
+    if os.path.exists(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + historyWeeklyDataFileName):
         msg = "周报历史数据已存在"
         return jsonify({
             "code": 1,
             "msg": msg
         })
     else:
-        with open("./static/historyWeeklyData/" + historyWeeklyDataFileName, mode="x", encoding="utf-8") as f:
+        with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + historyWeeklyDataFileName, mode="x",
+                  encoding="utf-8") as f:
             f.write(json.dumps(post_data))
 
     try:
@@ -226,7 +265,8 @@ def generate_weekly_report():
 
         # 编写ppt
         # 这种打开方式适合ppt2007及最新，不适合ppt2003及以前。支持stringio/bytesio stream
-        prs = Presentation("./static/template/week.pptx")  # type: pptx.presentation.Presentation # 设置type，会有代码提示
+        prs = Presentation(
+            app.config["UPLOAD_FOLDER"] + "/template/week.pptx")  # type: pptx.presentation.Presentation # 设置type，会有代码提示
         wr = SetWeaklyReport(prs)
         # 运维工作统计
         wr.slide_1(events_count)
@@ -251,21 +291,21 @@ def generate_weekly_report():
 
         # 运行情况分析
         wr.slide_8(cluster_pie_data, cluster_table_data)
-        #
+
         # 下周工作计划
         wr.slide_9(working_plan_data)
 
         # 保存pptx
         weeklyReportFileName = year + month + week + ".pptx"
 
-        if os.path.exists("./static/weeklyReports/" + weeklyReportFileName):
+        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName):
             msg = "周报已存在"
             return jsonify({
                 "code": 1,
                 "msg": msg
             })
         else:
-            prs.save("./static/weeklyReports/" + weeklyReportFileName)
+            prs.save(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName)
             return jsonify({
                 "code": 0,
                 "msg": "周报生成成功"
@@ -279,6 +319,7 @@ def generate_weekly_report():
         })
 
 
+# 生成月报
 @app.route("/monthlyReportsData", methods=["POST"])
 def generate_monthly_report():
     # 获取周报文件
@@ -305,7 +346,7 @@ def generate_monthly_report():
 
     try:
         for file in files:
-            prs = pptx.Presentation("./static/weeklyReports/" + file)
+            prs = pptx.Presentation(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + file)
             mr = GetMonthlyReportsData(prs)
             event_count = mr.get_event_count()
             inspect_data = mr.get_inspect_data()
@@ -374,6 +415,7 @@ def generate_monthly_report():
         # print(month_release_data)
         # print(month_problem_data)
         # print(month_analyse_data)
+        print(json.dumps(month_analyse_data))
     except Exception as e:
         return jsonify({
             "code": 1,
@@ -382,7 +424,7 @@ def generate_monthly_report():
 
     try:
         # 合成月报
-        prs = pptx.Presentation("./static/template/month.pptx")
+        prs = pptx.Presentation(app.config["UPLOAD_FOLDER"] + "/template/month.pptx")
         mr = SetMonthlyReport(prs)
 
         # 巡检
@@ -410,14 +452,14 @@ def generate_monthly_report():
         mr.slide_8(month_analyse_data)
 
         # 保存月报
-        if os.path.exists("./static/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx"):
+        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx"):
             msg = "月报已存在"
             return jsonify({
                 "code": 1,
                 "msg": msg
             })
         else:
-            prs.save("./static/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx")
+            prs.save(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx")
 
             return jsonify({
                 "code": 0,
@@ -425,9 +467,20 @@ def generate_monthly_report():
             })
     except Exception as e:
         return jsonify({
-            "code": 1,
+            "code": 2,
             "msg": "月报生成失败" + str(e)
         })
+
+
+# 月报汇总
+@app.route("/monthlySummaryData", methods=["POST"])
+def generate_yearly_report():
+    pass
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 
 if __name__ == '__main__':

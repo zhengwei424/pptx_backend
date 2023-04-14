@@ -183,10 +183,10 @@ class GetMonthlyReportsData(object):
         # cluster names
         cluster_names = [
             "FCP业务集群",
-            "内网微服务区",
-            "内网后台区",
-            "外网微服务区",
-            "外网后台区"
+            # "内网微服务区",
+            # "内网后台区",
+            # "外网微服务区",
+            # "外网后台区"
         ]
         for item in cluster_names:
             analyse_data[item] = {"cpu": [], "memory": [], "table_data": [], "summary": ""}
@@ -340,7 +340,9 @@ class SetMonthlyReport(object):
         row = 9
         # 表格页数初始化
         pages = 0
-        if len(month_permission_management_data) % (row - 1):
+        if len(month_permission_management_data) == 0:
+            pages = 1
+        elif len(month_permission_management_data) % (row - 1):
             pages = len(month_permission_management_data) // (row - 1) + 1
         else:
             pages = len(month_permission_management_data) // (row - 1)
@@ -426,7 +428,9 @@ class SetMonthlyReport(object):
         row = 9
         # 表格页数初始化
         pages = 0
-        if len(month_cooperation_data) % (row - 1):
+        if len(month_cooperation_data) == 0:
+            pages = 1
+        elif len(month_cooperation_data) % (row - 1):
             pages = len(month_cooperation_data) // (row - 1) + 1
         else:
             pages = len(month_cooperation_data) // (row - 1)
@@ -511,7 +515,9 @@ class SetMonthlyReport(object):
         row = 15
         # 表格页数初始化
         pages = 0
-        if len(month_release_data) % (row - 1):
+        if len(month_release_data) == 0:
+            pages = 1
+        elif len(month_release_data) % (row - 1):
             pages = len(month_release_data) // (row - 1) + 1
         else:
             pages = len(month_release_data) // (row - 1)
@@ -594,7 +600,9 @@ class SetMonthlyReport(object):
         row = 9
         # 表格页数初始化
         pages = 0
-        if len(month_problem_data) % (row - 1):
+        if len(month_problem_data) == 0:
+            pages = 1
+        elif len(month_problem_data) % (row - 1):
             pages = len(month_problem_data) // (row - 1) + 1
         else:
             pages = len(month_problem_data) // (row - 1)
@@ -674,7 +682,8 @@ class SetMonthlyReport(object):
     def slide_8(self, month_analyse_data: list):
         # 解析数据
         data_length = len(month_analyse_data)
-        cluster_names = ["FCP业务集群", "内网微服务区", "内网后台区", "外网微服务区", "外网后台区"]
+        #cluster_names = ["FCP业务集群", "内网微服务区", "内网后台区", "外网微服务区", "外网后台区"]
+        cluster_names = ["FCP业务集群"]
         weeks = ["第1周", "第2周", "第3周", "第4周", "第5周"]
         cpu_allocated = {}
         memory_allocated = {}

@@ -157,7 +157,9 @@ class SetWeaklyReport(object):
         row = 15
         # 表格页数初始化
         pages = 0
-        if len(release_data) % (row - 1):
+        if len(release_data) == 0:
+            pages = 1
+        elif len(release_data) % (row - 1):
             pages = len(release_data) // (row - 1) + 1
         else:
             pages = len(release_data) // (row - 1)
@@ -248,11 +250,12 @@ class SetWeaklyReport(object):
         row = 9
         # 表格页数初始化
         pages = 0
-        if len(permission_management_data) % (row - 1):
+        if len(permission_management_data) == 0:
+            pages = 1
+        elif len(permission_management_data) % (row - 1):
             pages = len(permission_management_data) // (row - 1) + 1
         else:
             pages = len(permission_management_data) // (row - 1)
-
         for page in range(1, pages + 1):
             # 添加一张幻灯片
             self._prs.slides.add_slide(self._prs.slide_masters[0].slide_layouts[1])
@@ -333,7 +336,9 @@ class SetWeaklyReport(object):
         row = 9
         # 表格页数初始化
         pages = 0
-        if len(cooperation_data) % (row - 1):
+        if len(cooperation_data) == 0:
+            pages = 1
+        elif len(cooperation_data) % (row - 1):
             pages = len(cooperation_data) // (row - 1) + 1
         else:
             pages = len(cooperation_data) // (row - 1)

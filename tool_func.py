@@ -56,69 +56,70 @@ def get_deploy_info():
     # 集群中各namespace的资源配额
     cluster_namespaces_quota = {}
 
-    with open("static/kubeconfig/config", encoding="utf-8") as kubeconfig:
+    with open("config/kubeconfig/config", encoding="utf-8") as kubeconfig:
         kc = yaml.safe_load(kubeconfig)
         for item in kc.get("contexts"):
             context_list.append(item.get("name"))
-    for context in context_list:
-        deploy_info[context] = {}
-        cluster_namespaces_quota[context] = {}
-        namespaces_names = []
-        config.load_kube_config(config_file="static/kubeconfig/config", context=context)
-        namespaces = client.CoreV1Api().list_namespace()
-        nodes = client.CoreV1Api().list_node()
-        cluster_total_resources[context] = {"cpu": 0, "memory": 0}
-        # 通过集群各节点资源计算集群worker节点资源总额（总资源减去master资源）
-        for node in nodes.items:
-            cluster_total_resources[context]["cpu"] += int(node.status.capacity.get("cpu"))
-            cluster_total_resources[context]["memory"] += int(node.status.capacity.get("memory").split("Ki")[0])
+    # for context in context_list:
+    context = "fcp"
+    deploy_info[context] = {}
+    cluster_namespaces_quota[context] = {}
+    namespaces_names = []
+    config.load_kube_config(config_file="config/kubeconfig/config", context=context)
+    namespaces = client.CoreV1Api().list_namespace()
+    nodes = client.CoreV1Api().list_node()
+    cluster_total_resources[context] = {"cpu": 0, "memory": 0}
+    # 通过集群各节点资源计算集群worker节点资源总额（总资源减去master资源）
+    for node in nodes.items:
+        cluster_total_resources[context]["cpu"] += int(node.status.capacity.get("cpu"))
+        cluster_total_resources[context]["memory"] += int(node.status.capacity.get("memory").split("Ki")[0])
+    if context == "fcp":
+        cluster_total_resources[context]["cpu"] -= 48 * 3
+        cluster_total_resources[context]["memory"] = cluster_total_resources[context]["memory"] // (
+                1024 * 1024) - 376 * 3
+    else:
+        cluster_total_resources[context]["cpu"] -= 56 * 3
+        cluster_total_resources[context]["memory"] = cluster_total_resources[context]["memory"] // (
+                1024 * 1024) - 251 * 3
+    # 获取集群namespace
+    for namespace in namespaces.items:
+        namespaces_names.append(namespace.metadata.name)
+    # 获取集群中各namespace的应用部署信息（通过deploy或statefulset的labels标签获取应用名称）以及资源配额
+    for ns in namespaces_names:
+        # 集群namespace应用部署信息
+        deploy_info[context][ns] = {}
+        # 集群namespace资源配额信息
+        cluster_namespaces_quota[context][ns] = {"cpu": 0, "memory": 0}
+        # 绿区fcp集群的statefulset的部署信息
         if context == "fcp":
-            cluster_total_resources[context]["cpu"] -= 48 * 3
-            cluster_total_resources[context]["memory"] = cluster_total_resources[context]["memory"] // (
-                    1024 * 1024) - 376 * 3
-        else:
-            cluster_total_resources[context]["cpu"] -= 56 * 3
-            cluster_total_resources[context]["memory"] = cluster_total_resources[context]["memory"] // (
-                    1024 * 1024) - 251 * 3
-        # 获取集群namespace
-        for namespace in namespaces.items:
-            namespaces_names.append(namespace.metadata.name)
-        # 获取集群中各namespace的应用部署信息（通过deploy或statefulset的labels标签获取应用名称）以及资源配额
-        for ns in namespaces_names:
-            # 集群namespace应用部署信息
-            deploy_info[context][ns] = {}
-            # 集群namespace资源配额信息
-            cluster_namespaces_quota[context][ns] = {"cpu": 0, "memory": 0}
-            # 绿区fcp集群的statefulset的部署信息
-            if context == "fcp":
-                statefulsets = client.AppsV1Api().list_namespaced_stateful_set(namespace=ns)
-                for sts in statefulsets.items:
-                    if sts.metadata.labels.get("app"):
-                        deploy_info[context][ns][sts.metadata.labels.get("app")] = sts.spec.replicas
-            # 集群deployment的部署信息
-            deploys = client.ExtensionsV1beta1Api().list_namespaced_deployment(namespace=ns)
-            for deploy in deploys.items:
-                # 没label的就舍弃
-                if deploy.metadata.labels.get("application_name"):
-                    deploy_info[context][ns][deploy.metadata.labels.get("application_name")] = deploy.spec.replicas
-                elif deploy.metadata.labels.get("app"):
-                    deploy_info[context][ns][deploy.metadata.labels.get("app")] = deploy.spec.replicas
+            statefulsets = client.AppsV1Api().list_namespaced_stateful_set(namespace=ns)
+            for sts in statefulsets.items:
+                if sts.metadata.labels.get("app"):
+                    deploy_info[context][ns][sts.metadata.labels.get("app")] = sts.spec.replicas
+        # 集群deployment的部署信息
+        deploys = client.ExtensionsV1beta1Api().list_namespaced_deployment(namespace=ns)
+        for deploy in deploys.items:
+            # 没label的就舍弃
+            if deploy.metadata.labels.get("application_name"):
+                deploy_info[context][ns][deploy.metadata.labels.get("application_name")] = deploy.spec.replicas
+            elif deploy.metadata.labels.get("app"):
+                deploy_info[context][ns][deploy.metadata.labels.get("app")] = deploy.spec.replicas
 
-            # 集群namespace资源配额
-            quotas = client.CoreV1Api().list_namespaced_resource_quota(namespace=ns)
-            for quota in quotas.items:
-                cpu = quota.spec.hard.get("limits.cpu")
-                memory = quota.spec.hard.get("limits.memory")
-                cluster_namespaces_quota[context][ns]["cpu"] = int(cpu)
-                # 单位Gi
-                if quota.spec.hard.get("limits.memory")[-2:] == "Gi":
-                    cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Gi")[0])
-                elif quota.spec.hard.get("limits.memory")[-2:] == "Ti":
-                    cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Ti")[0]) * 1024
-                elif quota.spec.hard.get("limits.memory")[-2:] == "Mi":
-                    cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Mi")[0]) // 1024
-                elif quota.spec.hard.get("limits.memory")[-2:] == "Ki":
-                    cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Ki")[0]) / 1024 // 1024
+        # 集群namespace资源配额
+        quotas = client.CoreV1Api().list_namespaced_resource_quota(namespace=ns)
+        for quota in quotas.items:
+            cpu = quota.spec.hard.get("limits.cpu")
+            memory = quota.spec.hard.get("limits.memory")
+            cluster_namespaces_quota[context][ns]["cpu"] = int(cpu)
+            # 单位Gi
+            if quota.spec.hard.get("limits.memory")[-2:] == "Gi":
+                cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Gi")[0])
+            elif quota.spec.hard.get("limits.memory")[-2:] == "Ti":
+                cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Ti")[0]) * 1024
+            elif quota.spec.hard.get("limits.memory")[-2:] == "Mi":
+                cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Mi")[0]) // 1024
+            elif quota.spec.hard.get("limits.memory")[-2:] == "Ki":
+                cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Ki")[0]) / 1024 // 1024
 
     return deploy_info, cluster_total_resources, cluster_namespaces_quota
 
