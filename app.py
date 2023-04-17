@@ -7,6 +7,7 @@ from pptx import Presentation
 from week_func import SetWeaklyReport
 from tool_func import generate_table_data
 from month_func import GetMonthlyReportsData, SetMonthlyReport
+from customMonthlySummary_func import SetMonthlySummaryReport
 
 ALLOWED_EXTENSIONS = {'pptx'}
 
@@ -38,25 +39,45 @@ def weekly_reports():
     return jsonify(result)
 
 
-# 获取周报json文件列表
-@app.route("/weeklyReportsJson", methods=["GET"])
+# 获取周报json文件列表 / 更新周报JSON文件
+@app.route("/weeklyReportsJson", methods=["GET", "POST"])
 def weekly_reports_json():
-    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData")
-    report_files.sort()
-    result = []
-    for file in report_files:
-        content = ''
-        with open('data/historyWeeklyData/' + file, mode='r', encoding='UTF-8') as f:
-            line = f.readline()
-            while line:
-                content += line
-        item = dict({
-            "name": str(file),
-            "content": content
-        })
-        result.append(item)
-        print(result)
-    return jsonify(result)
+    if request.method == "GET":
+        report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData")
+        report_files.sort()
+        result = []
+        for file in report_files:
+            content = ''
+            with open(app.config['UPLOAD_FOLDER'] + '/historyWeeklyData/' + file, mode='r', encoding='UTF-8') as f:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    content += line
+            item = dict({
+                "fileName": str(file),
+                "fileContent": json.dumps(json.loads(content), indent=2, ensure_ascii=False)
+            })
+            result.append(item)
+        return jsonify(result)
+    if request.method == "POST":
+        data = request.json
+        try:
+            json.loads(data["fileContent"])
+        except Exception as e:
+            resp_data = {
+                "code": 1,
+                "msg": str(e)
+            }
+            return jsonify(resp_data)
+
+        with open(app.config['UPLOAD_FOLDER'] + '/historyWeeklyData/' + data["fileName"], mode='w') as f:
+            f.write(json.dumps(json.loads(data["fileContent"])))
+        resp_data = {
+            "code": 0,
+            "msg": "JSON更新成功"
+        }
+        return jsonify(resp_data)
 
 
 # 获取月报文件列表
@@ -68,6 +89,27 @@ def monthly_reports():
     for file in report_files:
         item = dict({
             "name": str(file)
+        })
+        result.append(item)
+    return jsonify(result)
+
+
+# 获取月报json文件列表 / 更新周报JSON文件
+@app.route("/monthlyReportsJson", methods=["GET"])
+def monthly_reports_json():
+    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyMonthlyData")
+    report_files.sort()
+    result = []
+    for file in report_files:
+        content = ''
+        with open(app.config['UPLOAD_FOLDER'] + '/historyMonthlyData/' + file, mode='r', encoding='UTF-8') as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                content += line
+        item = dict({
+            "fileName": str(file)
         })
         result.append(item)
     return jsonify(result)
@@ -151,6 +193,14 @@ def monthly_reports_download(filename):
     return send_from_directory(directory=app.config['UPLOAD_FOLDER'] + "/monthlyReports/", path=filename)
 
 
+# 下载月报汇总
+@app.route('/monthlySummaryReports/download/<filename>', methods=["GET"])
+def monthly_summary_reports_download(filename):
+    # send_static_file会在static目录下寻找文件
+    # return app.send_static_file("monthlyReports/" + filename)
+    return send_from_directory(directory=app.config['UPLOAD_FOLDER'] + "/monthlySummaryReports/", path=filename)
+
+
 # 生成周报
 @app.route("/weeklyReportsData", methods=["POST"])
 def generate_weekly_report():
@@ -165,15 +215,16 @@ def generate_weekly_report():
 
     # 响应消息
     msg = ""
-    historyWeeklyDataFileName = year + month + week + ".json"
-    if os.path.exists(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + historyWeeklyDataFileName):
-        msg = "周报历史数据已存在"
-        return jsonify({
-            "code": 1,
-            "msg": msg
-        })
-    else:
-        with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + historyWeeklyDataFileName, mode="x",
+    history_weekly_data_file_name = year + month + week + ".json"
+    if post_data.get("status") == 0:
+        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name):
+            msg = "历史周报JSON文件已存在"
+            return jsonify({
+                "code": 1,
+                "msg": msg
+            })
+
+        with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name, mode="x",
                   encoding="utf-8") as f:
             f.write(json.dumps(post_data))
 
@@ -298,20 +349,19 @@ def generate_weekly_report():
         # 保存pptx
         weeklyReportFileName = year + month + week + ".pptx"
 
-        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName):
-            msg = "周报已存在"
-            return jsonify({
-                "code": 1,
-                "msg": msg
-            })
-        else:
-            prs.save(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName)
-            return jsonify({
-                "code": 0,
-                "msg": "周报生成成功"
-            })
+        # if os.path.exists(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName):
+        #     msg = "周报已存在"
+        #     return jsonify({
+        #         "code": 1,
+        #         "msg": msg
+        #     })
+        # else:
+        prs.save(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName)
+        return jsonify({
+            "code": 0,
+            "msg": "周报生成成功"
+        })
     except Exception as e:
-        print("error:", e)
         msg = "周报生成失败" + str(e)
         return jsonify({
             "code": 1,
@@ -395,6 +445,38 @@ def generate_monthly_report():
         if month_problem_data:
             work_summary.append("联通云平台问题处理" + str(len(month_problem_data)) + "次")
 
+        # 月报JSON数据
+        monthly_report_json_data = {
+            # 巡检[巡检次数、提交报告次数、正常次数、异常次数]
+            "month_inspect_data": month_inspect_data,
+            # 运维工作统计[变更、资源权限管理、配合操作、支撑发版、故障及问题处理]
+            "month_event_count": month_event_count,
+            # 变更内容
+            "month_change_data": month_change_data,
+            # 资源权限管理
+            "month_permission_management_data": month_permission_management_data,
+            # 配合操作
+            "month_cooperation_data": month_cooperation_data,
+            # 支撑发版
+            "month_release_data": month_release_data,
+            # 问题处理
+            "month_problem_data": month_problem_data,
+            # 运行情况分析
+            "month_analyse_data": month_analyse_data
+        }
+
+        history_monthly_data_file_name = app.config["UPLOAD_FOLDER"] + "/historyMonthlyData/" + files[-1].split(".")[0][
+                                                                                                :-2] + ".json"
+
+        if os.path.exists(history_monthly_data_file_name):
+            return jsonify({
+                "code": 1,
+                "msg": "月报JSON文件已存在"
+            })
+        with open(history_monthly_data_file_name, mode="x",
+                  encoding="utf-8") as f:
+            f.write(json.dumps(monthly_report_json_data))
+
         # 资源权限管理添加序号
         i = 1
         for item in month_permission_management_data:
@@ -407,15 +489,6 @@ def generate_monthly_report():
             item.insert(0, str(i))
             i += 1
 
-        # print(month_inspect_data)
-        # print(month_event_count)
-        # print(month_change_data)
-        # print(month_permission_management_data)
-        # print(month_cooperation_data)
-        # print(month_release_data)
-        # print(month_problem_data)
-        # print(month_analyse_data)
-        print(json.dumps(month_analyse_data))
     except Exception as e:
         return jsonify({
             "code": 1,
@@ -452,30 +525,165 @@ def generate_monthly_report():
         mr.slide_8(month_analyse_data)
 
         # 保存月报
-        if os.path.exists(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx"):
-            msg = "月报已存在"
-            return jsonify({
-                "code": 1,
-                "msg": msg
-            })
-        else:
-            prs.save(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx")
+        # if os.path.exists(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx"):
+        #     msg = "月报已存在"
+        #     return jsonify({
+        #         "code": 1,
+        #         "msg": msg
+        #     })
+        # else:
+        prs.save(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx")
 
-            return jsonify({
-                "code": 0,
-                "msg": "月报生成成功"
-            })
+        return jsonify({
+            "code": 0,
+            "msg": "月报生成成功"
+        })
     except Exception as e:
         return jsonify({
-            "code": 2,
+            "code": 1,
             "msg": "月报生成失败" + str(e)
         })
 
 
 # 月报汇总
 @app.route("/monthlySummaryData", methods=["POST"])
-def generate_yearly_report():
-    pass
+def generate_monthly_summary_report():
+    # 获取周报文件
+    files = request.json
+
+    # 月报汇总范围
+    months = []
+    # 月报数据初始化
+    # 巡检[巡检次数、提交报告次数、正常次数、异常次数]
+    monthly_summary_inspect_data = [0, 0, 0, 0]
+    # 运维工作统计[变更、资源权限管理、配合操作、支撑发版、故障及问题处理]
+    monthly_summary_event_count = [0, 0, 0, 0, 0]
+    work_summary = [files[0].split(".")[0][4:] + "-" + files[-1].split(".")[0][4:] + "月主要工作："]
+    # 变更内容
+    monthly_summary_change_data = []
+    # 资源权限管理
+    monthly_summary_permission_management_data = []
+    # 配合操作
+    monthly_summary_cooperation_data = []
+    # 支撑发版
+    monthly_summary_release_data = []
+    # 问题处理
+    monthly_summary_problem_data = []
+    # 运行情况分析
+    monthly_summary_analyse_data = []
+    try:
+        for file in files:
+            file_json_data = {}
+            with open(app.config["UPLOAD_FOLDER"] + "/historyMonthlyData/" + file, mode='r', encoding="UTF-8") as f:
+                line = f.readline()
+                if line:
+                    file_json_data = json.loads(line)
+
+            monthly_summary_inspect_data[0] += file_json_data.get("month_inspect_data")[0]  # 巡检次数
+            monthly_summary_inspect_data[1] += file_json_data.get("month_inspect_data")[1]  # 提交报告次数
+            monthly_summary_inspect_data[2] += file_json_data.get("month_inspect_data")[2]  # 正常次数
+            monthly_summary_inspect_data[3] += file_json_data.get("month_inspect_data")[3]  # 异常次数
+
+            monthly_summary_event_count[0] += file_json_data.get("month_event_count")[0]  # 变更
+            monthly_summary_event_count[1] += file_json_data.get("month_event_count")[1]  # 资源权限管理
+            monthly_summary_event_count[2] += file_json_data.get("month_event_count")[2]  # 配合操作
+            monthly_summary_event_count[3] += file_json_data.get("month_event_count")[3]  # 支撑发版
+            monthly_summary_event_count[4] += file_json_data.get("month_event_count")[4]  # 故障及问题ch处理
+
+            monthly_summary_change_data += file_json_data.get("month_change_data")
+
+            monthly_summary_permission_management_data += file_json_data.get("month_permission_management_data")
+
+            monthly_summary_cooperation_data += file_json_data.get("month_cooperation_data")
+
+            monthly_summary_release_data += file_json_data.get("month_release_data")
+
+            monthly_summary_problem_data += file_json_data.get("month_problem_data")
+
+            monthly_summary_analyse_data.append(file_json_data.get("month_analyse_data")[-1])
+
+            months.append(files[-1].split(".")[0][4:] + "月")
+
+        if monthly_summary_change_data:
+            work_summary += monthly_summary_change_data
+        if monthly_summary_cooperation_data:
+            work_summary.append(
+                "日常配合应用运维或研发人员做问题排查" + str(len(monthly_summary_cooperation_data)) + "次")
+        if monthly_summary_release_data:
+            work_summary.append("支撑发版" + str(len(monthly_summary_release_data)) + "次")
+        if monthly_summary_problem_data:
+            work_summary.append("联通云平台问题处理" + str(len(monthly_summary_problem_data)) + "次")
+
+        # 资源权限管理添加序号
+        i = 1
+        for item in monthly_summary_permission_management_data:
+            item.insert(0, str(i))
+            i += 1
+
+        # 配合操作添加序号
+        i = 1
+        for item in monthly_summary_cooperation_data:
+            item.insert(0, str(i))
+            i += 1
+
+    except Exception as e:
+        return jsonify({
+            "code": 1,
+            "msg": "获取月报JSON报数据失败" + str(e)
+        })
+
+    try:
+        # 汇总月报
+        prs = pptx.Presentation(app.config["UPLOAD_FOLDER"] + "/template/monthsSummary.pptx")
+        mr = SetMonthlySummaryReport(prs)
+
+        # 巡检
+        mr.slide_1(monthly_summary_inspect_data)
+
+        # 运维工作统计
+        mr.slide_2(monthly_summary_event_count, work_summary)
+
+        # 变更
+        mr.slide_3(monthly_summary_change_data)
+
+        # 资源权限管理(有序号)
+        mr.slide_4(monthly_summary_permission_management_data)
+
+        # 配合操作(有序号)
+        mr.slide_5(monthly_summary_cooperation_data)
+
+        # 支撑发版
+        mr.slide_6(monthly_summary_release_data)
+
+        # 问题处理
+        mr.slide_7(monthly_summary_problem_data)
+
+        # 运行情况分析
+        mr.slide_8(monthly_summary_analyse_data, months)
+
+        # 保存月报
+        # if os.path.exists(app.config["UPLOAD_FOLDER"] + "/monthlyReports/" + files[-1].split(".")[0][:-2] + ".pptx"):
+        #     msg = "月报已存在"
+        #     return jsonify({
+        #         "code": 1,
+        #         "msg": msg
+        #     })
+        # else:
+        monthly_summary_report_file_name = app.config["UPLOAD_FOLDER"] + "/monthlySummaryReports/" + \
+                                           files[0].split(".")[0][:4] + "年" + \
+                                           files[0].split(".")[0][4:] + "-" + files[-1].split(".")[0][4:] + \
+                                           "月月报汇总.pptx"
+        prs.save(monthly_summary_report_file_name)
+
+        return jsonify({
+            "code": 0,
+            "msg": "月报汇总成功"
+        })
+    except Exception as e:
+        return jsonify({
+            "code": 1,
+            "msg": "月报汇总失败" + str(e)
+        })
 
 
 @app.route("/")
