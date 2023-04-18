@@ -544,12 +544,12 @@ class SetMonthlySummaryReport(object):
         self._prs.slides.add_slide(self._prs.slide_masters[0].slide_layouts[1])
 
         # 当前slide
-        slide = self._prs.slides[self._current_slide_idx + 6]  # type:pptx.slide.Slide
+        slide = self._prs.slides[self._current_slide_idx + 5]  # type:pptx.slide.Slide
 
         # 幻灯片标题
         slidePlaceholder = slide.shapes[0]  # type: pptx.shapes.placeholder.SlidePlaceholder
         p = slidePlaceholder.text_frame.paragraphs[0]
-        p.text = "四、慧企平台月报"
+        p.text = "四、慧企平台"
         set_text_frame_paragraph_format(p, font_bold=True, font_size=24)
 
         txbox = slide.shapes.add_textbox(Cm(0.1), Cm(2), Cm(13), Cm(1))
@@ -558,7 +558,7 @@ class SetMonthlySummaryReport(object):
         # # 自动换行
         # tf.word_wrap = True
         tfp = tf.paragraphs[0]
-        tfp.text = "本月运维情况分析---集群资源可分配容量"
+        tfp.text = "运维情况分析---集群资源可分配容量"
         set_text_frame_paragraph_format(tfp, font_size=16)
 
         # cpu资源使用情况
@@ -606,7 +606,7 @@ class SetMonthlySummaryReport(object):
                 # 幻灯片标题
                 slidePlaceholder = slide.shapes[0]  # type: pptx.shapes.placeholder.SlidePlaceholder
                 p = slidePlaceholder.text_frame.paragraphs[0]
-                p.text = "四、慧企平台月报"
+                p.text = "四、慧企平台"
                 set_text_frame_paragraph_format(p, font_bold=True, font_size=24)
 
                 txbox = slide.shapes.add_textbox(Cm(0.1), Cm(2.5), Cm(8), Cm(1))
@@ -1266,7 +1266,7 @@ class SetMonthlySummaryReport(object):
         # 幻灯片标题
         slidePlaceholder = slide.shapes[0]  # type: pptx.shapes.placeholder.SlidePlaceholder
         p = slidePlaceholder.text_frame.paragraphs[0]
-        p.text = "四、慧企平台月报"
+        p.text = "四、慧企平台"
         set_text_frame_paragraph_format(p, font_bold=True, font_size=24)
 
         txbox = slide.shapes.add_textbox(Cm(0.1), Cm(2), Cm(13), Cm(1))

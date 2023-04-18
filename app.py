@@ -359,10 +359,10 @@ def generate_weekly_report():
         prs.save(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + weeklyReportFileName)
         return jsonify({
             "code": 0,
-            "msg": "周报生成成功"
+            "msg": "周报生成/更新成功"
         })
     except Exception as e:
-        msg = "周报生成失败" + str(e)
+        msg = "周报生成/更新失败" + str(e)
         return jsonify({
             "code": 1,
             "msg": msg

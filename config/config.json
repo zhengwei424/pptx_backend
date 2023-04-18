@@ -1,7 +1,7 @@
 {
   "mysql": {
-    "host": "192.168.2.49",
-    "port": 40006,
+    "host": "10.123.12.73",
+    "port": 3306,
     "user": "root",
     "password": "ipaas@XX20190710173737",
     "db": "devops",
