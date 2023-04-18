@@ -602,7 +602,7 @@ def generate_monthly_summary_report():
 
             monthly_summary_analyse_data.append(file_json_data.get("month_analyse_data")[-1])
 
-            months.append(files[-1].split(".")[0][4:] + "月")
+            months.append(file.split(".")[0][4:] + "月")
 
         if monthly_summary_change_data:
             work_summary += monthly_summary_change_data
