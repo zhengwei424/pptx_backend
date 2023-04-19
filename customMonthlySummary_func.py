@@ -544,7 +544,7 @@ class SetMonthlySummaryReport(object):
         self._prs.slides.add_slide(self._prs.slide_masters[0].slide_layouts[1])
 
         # 当前slide
-        slide = self._prs.slides[self._current_slide_idx + 5]  # type:pptx.slide.Slide
+        slide = self._prs.slides[self._current_slide_idx + 6]  # type:pptx.slide.Slide
 
         # 幻灯片标题
         slidePlaceholder = slide.shapes[0]  # type: pptx.shapes.placeholder.SlidePlaceholder
