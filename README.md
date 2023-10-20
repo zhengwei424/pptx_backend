@@ -1,5 +1,5 @@
 # 前端
-https://github.com/zhengwei424/pptx_fronted
+https://github.com/zhengwei424/pptx_frontend
 
 # 后端
 https://github.com/zhengwei424/pptx_backend
