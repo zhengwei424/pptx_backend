@@ -1,13 +1,8 @@
-create a new repository on the command line:
-echo "# pptx" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/zhengwei424/pptx.git
-git push -u origin main
+# 前端
+https://github.com/zhengwei424/pptx_frontend
 
-push an existing repository from the command line:
-git remote add origin https://github.com/zhengwei424/pptx.git
-git branch -M main
-git push -u origin main
+# 后端
+https://github.com/zhengwei424/pptx_backend
+
+# 功能拼图
+![xx](https://github.com/zhengwei424/pptx_backend/blob/master/11.jpg)
