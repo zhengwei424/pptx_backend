@@ -12,7 +12,8 @@ from customMonthlySummary_func import SetMonthlySummaryReport
 ALLOWED_EXTENSIONS = {'pptx'}
 
 app = Flask(__name__, static_folder="static", template_folder="template", static_url_path="")
-app.config['UPLOAD_FOLDER'] = "data"
+app.root_path = os.path.dirname(os.path.abspath(__file__))
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, "data")
 CORS(app, supports_credentials=True)
 
 
@@ -28,25 +29,50 @@ def allowed_file(filename):
 # 获取周报文件列表
 @app.route("/weeklyReports", methods=["GET"])
 def weekly_reports():
+    current_page = int(request.args.get('currentPage'))
+    page_size = int(request.args.get('pageSize'))
+
     report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/weeklyReports")
-    report_files.sort()
+    report_files.sort(reverse=True)
+
+    # 返回结果
     result = []
-    for file in report_files:
+
+    # 分页
+    start_index = (current_page - 1) * page_size
+    end_index = start_index + page_size
+    tmp = report_files[start_index:end_index]
+
+    for file in tmp:
         item = dict({
             "name": str(file)
         })
         result.append(item)
-    return jsonify(result)
+    return jsonify({
+        "result": result,
+        "total": len(report_files)
+    })
 
 
 # 获取周报json文件列表 / 更新周报JSON文件
 @app.route("/weeklyReportsJson", methods=["GET", "POST"])
 def weekly_reports_json():
     if request.method == "GET":
-        report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData")
-        report_files.sort()
+        current_page = int(request.args.get('currentPage'))
+        page_size = int(request.args.get('pageSize'))
+
+        json_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData")
+        json_files.sort(reverse=True)
+
+        # 返回结果
         result = []
-        for file in report_files:
+
+        # 分页
+        start_index = (current_page - 1) * page_size
+        end_index = start_index + page_size
+        tmp = json_files[start_index:end_index]
+
+        for file in tmp:
             content = ''
             with open(app.config['UPLOAD_FOLDER'] + '/historyWeeklyData/' + file, mode='r', encoding='UTF-8') as f:
                 while True:
@@ -59,7 +85,10 @@ def weekly_reports_json():
                 "fileContent": json.dumps(json.loads(content), indent=2, ensure_ascii=False)
             })
             result.append(item)
-        return jsonify(result)
+        return jsonify({
+            "result": result,  # 只返回page_size大小的数据
+            "total": len(json_files)  # 文件总数,前端用来计算页码
+        })
     if request.method == "POST":
         data = request.json
         try:
@@ -83,24 +112,49 @@ def weekly_reports_json():
 # 获取月报文件列表
 @app.route("/monthlyReports", methods=["GET"])
 def monthly_reports():
+    current_page = int(request.args.get('currentPage'))
+    page_size = int(request.args.get('pageSize'))
+
     report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/monthlyReports")
-    report_files.sort()
+    report_files.sort(reverse=True)
+
+    # 返回结果
     result = []
-    for file in report_files:
+
+    # 分页
+    start_index = (current_page - 1) * page_size
+    end_index = start_index + page_size
+    tmp = report_files[start_index:end_index]
+
+    for file in tmp:
         item = dict({
             "name": str(file)
         })
         result.append(item)
-    return jsonify(result)
+    return jsonify({
+        "result": result,
+        "total": len(report_files)
+    })
 
 
 # 获取月报json文件列表 / 更新周报JSON文件
 @app.route("/monthlyReportsJson", methods=["GET"])
 def monthly_reports_json():
-    report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyMonthlyData")
-    report_files.sort()
+    current_page = int(request.args.get('currentPage'))
+    page_size = int(request.args.get('pageSize'))
+
+    json_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/historyMonthlyData")
+    json_files.sort(reverse=True)
+
+    # 返回结果
     result = []
-    for file in report_files:
+
+    # 分页
+    start_index = (current_page - 1) * page_size
+    end_index = start_index + page_size
+    tmp = json_files[start_index:end_index]
+
+    for file in tmp:
         content = ''
         with open(app.config['UPLOAD_FOLDER'] + '/historyMonthlyData/' + file, mode='r', encoding='UTF-8') as f:
             while True:
@@ -112,21 +166,38 @@ def monthly_reports_json():
             "fileName": str(file)
         })
         result.append(item)
-    return jsonify(result)
+    return jsonify({
+        "result": result,
+        "total": len(json_files)
+    })
 
 
 # 获取月报汇总文件列表
 @app.route("/monthlySummaryReports", methods=["GET"])
 def monthly_summary_reports():
+    current_page = int(request.args.get('currentPage'))
+    page_size = int(request.args.get('pageSize'))
+
     report_files = os.listdir(app.config["UPLOAD_FOLDER"] + "/monthlySummaryReports")
-    report_files.sort()
+    report_files.sort(reverse=True)
+
+    # 返回结果
     result = []
-    for file in report_files:
+
+    # 分页
+    start_index = (current_page - 1) * page_size
+    end_index = start_index + page_size
+    tmp = report_files[start_index:end_index]
+
+    for file in tmp:
         item = dict({
             "name": str(file)
         })
         result.append(item)
-    return jsonify(result)
+    return jsonify({
+        "result": result,
+        "total": len(report_files)
+    })
 
 
 # 上传周报
@@ -205,28 +276,40 @@ def monthly_summary_reports_download(filename):
 @app.route("/weeklyReportsData", methods=["POST"])
 def generate_weekly_report():
     # request.json是一个字典，接收post请求的data数据
-    # {"weeklyData": weeklyData, "formdata": this.formData}
+    # {"status": 0,"weeklyData": weeklyData, "formdata": this.formData}
     post_data = request.json
     year = post_data.get("formdata").get("year")
     month = post_data.get("formdata").get("month")
     week = post_data.get("formdata").get("week")
-    # 通过周报的json数据重新生成周报
-    weekly_report_json_data = post_data.get("formdata").get("weekly_report_json_data")
+
+    # 初始化运行情况分析ppt中所需所需数据
+    cluster_pie_data = {}
+    cluster_table_data = {}
 
     # 响应消息
     msg = ""
+
     history_weekly_data_file_name = year + month + week + ".json"
     if post_data.get("status") == 0:
+        # 判断json数据是否存在
         if os.path.exists(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name):
             msg = "历史周报JSON文件已存在"
             return jsonify({
                 "code": 1,
                 "msg": msg
             })
+        # 获取运行情况分析ppt中所需所需数据
+        cluster_pie_data, cluster_table_data = generate_table_data()
+        post_data["cluster_pie_data"] = cluster_pie_data
+        post_data["cluster_table_data"] = cluster_table_data
+    elif post_data.get("status") == 1:
+        cluster_pie_data = post_data["cluster_pie_data"]
+        cluster_table_data = post_data["cluster_table_data"]
 
-        with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name, mode="x",
-                  encoding="utf-8") as f:
-            f.write(json.dumps(post_data))
+    # 将集群信息数据写入json中
+    with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name, mode="x",
+              encoding="utf-8") as f:
+        f.write(json.dumps(post_data))
 
     try:
         # inspect_data
@@ -311,9 +394,6 @@ def generate_weekly_report():
             0  # 故障处理
         ]
 
-        # 获取运行情况分析ppt中所需所需数据
-        cluster_pie_data, cluster_table_data = generate_table_data()
-
         # 编写ppt
         # 这种打开方式适合ppt2007及最新，不适合ppt2003及以前。支持stringio/bytesio stream
         prs = Presentation(
@@ -372,8 +452,15 @@ def generate_weekly_report():
 # 生成月报
 @app.route("/monthlyReportsData", methods=["POST"])
 def generate_monthly_report():
+    # 集群map
+    cluster_info = {"fcp": "FCP业务集群"}
+
     # 获取周报文件
-    files = request.json
+    files = []
+    for item in request.json:
+        files.append(item.split(".")[0])
+    # 顺序排序
+    files.sort()
 
     # 月报数据初始化
     # 巡检[巡检次数、提交报告次数、正常次数、异常次数]
@@ -396,16 +483,21 @@ def generate_monthly_report():
 
     try:
         for file in files:
-            prs = pptx.Presentation(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + file)
+            # 获取周报json数据
+            json_obj = {}
+            with open(app.config['UPLOAD_FOLDER'] + '/historyWeeklyData/' + file + ".json", mode='r', encoding='UTF-8') as f:
+                json_obj = json.loads(f.read())
+
+            prs = pptx.Presentation(app.config["UPLOAD_FOLDER"] + "/weeklyReports/" + file + ".pptx")
             mr = GetMonthlyReportsData(prs)
             event_count = mr.get_event_count()
             inspect_data = mr.get_inspect_data()
-            change_data = mr.get_change_data()
-            release_data = mr.get_release_data()
-            permission_management_data = mr.get_permission_management_data()
-            cooperation_data = mr.get_cooperation_data()
-            problem_data = mr.get_problem_data()
-            analyse_data = mr.get_analyse()
+            # change_data = mr.get_change_data()
+            # release_data = mr.get_release_data()
+            # permission_management_data = mr.get_permission_management_data()
+            # cooperation_data = mr.get_cooperation_data()
+            # problem_data = mr.get_problem_data()
+            # analyse_data = mr.get_analyse()
 
             month_inspect_data[0] += inspect_data[0]  # 巡检次数
             month_inspect_data[1] += inspect_data[2]  # 提交报告次数
@@ -418,23 +510,69 @@ def generate_monthly_report():
             month_event_count[3] += event_count[3]  # 支撑发版
             month_event_count[4] += event_count[4] + event_count[5]  # 故障及问题
 
-            if change_data:
-                for item in change_data:
-                    month_change_data.append(item[2])
+            for item in json_obj.get("weeklyData").get("change"):
+                if item:
+                    month_change_data.append(item["content"])
+            for item in json_obj.get("weeklyData").get("release"):
+                if item.values():
+                    month_release_data.append(list(item.values())[:-1])
+            for item in json_obj.get("weeklyData").get("permissionManagement"):
+                if item.values():
+                    month_permission_management_data.append(list(item.values())[:-1])
+            for item in json_obj.get("weeklyData").get("cooperation"):
+                if item.values():
+                    month_cooperation_data.append(list(item.values())[:-1])
+            for item in json_obj.get("weeklyData").get("problem"):
+                if item.values():
+                    month_problem_data.append(list(item.values())[:-1])
 
-            for item in permission_management_data:
-                month_permission_management_data.append(item)
+            for cluster in cluster_info.keys():
+                cluster_name = cluster_info.get(cluster)
+                # 集群资源已分配数值
+                cluster_allocated_cpu = json_obj.get("cluster_pie_data").get(cluster).get("cpu").get("allocated")
+                cluster_allocated_memory = json_obj.get("cluster_pie_data").get(cluster).get("memory").get("allocated")
+                # 集群资源总数值
+                cluster_total_cpu = json_obj.get("cluster_pie_data").get(cluster).get("cpu").get("total")
+                cluster_total_memory = json_obj.get("cluster_pie_data").get(cluster).get("memory").get("total")
+                # 集群资源已分配比率
+                cpu_allocated_rate = float("%.2f" % (cluster_allocated_cpu / cluster_total_cpu))
+                memory_allocated_rate = float("%.2f" % (cluster_allocated_memory / cluster_total_memory))
 
-            for item in cooperation_data:
-                month_cooperation_data.append(item)
+                total_count = json_obj.get("cluster_table_data").get(cluster)[-1]
+                summary = cluster_name + "部署" + total_count[0] + "个应用项目，包含" + \
+                total_count[1] + "个服务，运行实例" + total_count[2] + \
+                "个。CPU已分配" + str(cluster_allocated_cpu) + "/" + str(
+                    cluster_total_cpu) + "，占比" + \
+                "{:.0%}".format(cpu_allocated_rate) + "，内存已分配" + \
+                str(cluster_allocated_memory) + "/" + str(cluster_total_memory) + \
+                "，占比" + "{:.0%}".format(memory_allocated_rate)
 
-            for item in release_data:
-                month_release_data.append(item)
+                tmp = {}
+                tmp[cluster_name] = {"cpu": [], "memory": [], "table_data": [], "summary": ''}
+                tmp[cluster_name]["cpu"] = [cpu_allocated_rate, 1 - cpu_allocated_rate]
+                tmp[cluster_name]["memory"] = [memory_allocated_rate, 1 - memory_allocated_rate]
+                tmp[cluster_name]["table_data"] = json_obj.get("cluster_table_data").get(cluster)
+                tmp[cluster_name]["summary"] = summary
 
-            for item in problem_data:
-                month_problem_data.append(item)
+                month_analyse_data.append(tmp)
 
-            month_analyse_data.append(analyse_data)
+            # if change_data:
+            #     for item in change_data:
+            #         month_change_data.append(item[2])
+            #
+            # for item in release_data:
+            #     month_release_data.append(item)
+            #
+            # for item in permission_management_data:
+            #     month_permission_management_data.append(item)
+            #
+            # for item in cooperation_data:
+            #     month_cooperation_data.append(item)
+            #
+            # for item in problem_data:
+            #     month_problem_data.append(item)
+            #
+            # month_analyse_data.append(analyse_data)
 
         if month_change_data:
             work_summary += month_change_data
@@ -465,8 +603,7 @@ def generate_monthly_report():
             "month_analyse_data": month_analyse_data
         }
 
-        history_monthly_data_file_name = app.config["UPLOAD_FOLDER"] + "/historyMonthlyData/" + files[-1].split(".")[0][
-                                                                                                :-2] + ".json"
+        history_monthly_data_file_name = app.config["UPLOAD_FOLDER"] + "/historyMonthlyData/" + files[0][:-2] + ".json"
 
         if os.path.exists(history_monthly_data_file_name):
             return jsonify({

@@ -83,6 +83,8 @@ def get_deploy_info():
                 1024 * 1024) - 251 * 3
     # 获取集群namespace
     for namespace in namespaces.items:
+        if namespace.metadata.name == "cnspnspace-fcp":
+            continue
         namespaces_names.append(namespace.metadata.name)
     # 获取集群中各namespace的应用部署信息（通过deploy或statefulset的labels标签获取应用名称）以及资源配额
     for ns in namespaces_names:
@@ -129,7 +131,7 @@ def get_namespace_project():
         config = json.load(config)
     conn = pymysql.connect(**(config["mysql"]))
     mh = MySQLHandler(conn)
-    sql = "select PROJECT_ID, PROJECT_NAME from dps_pjm_project"
+    sql = "select PROJECT_ID, PROJECT_NAME, PROJECT_NAME_SPACE from dps_pjm_project"
     return mh.select(sql)
 
 
@@ -140,9 +142,13 @@ def generate_table_data():
     # 将数据库的project_id和project_name的元组信息转换为字典
     namespaces_info = {}
     for item in namespaces_tuple_info:
-        namespaces_info[item[0]] = item[1]
+        if item[2]:
+            namespaces_info[item[2]] = item[1]
+        else:
+            namespaces_info[item[0]] = item[1]
 
     # 从集群获取应用部署信息，集群资源总量，集群namespace资源分配信息
+
     deploy_info, cluster_total_resources, cluster_namespaces_quota = get_deploy_info()
 
     # 用于填充运行情况分析table数据
@@ -150,6 +156,8 @@ def generate_table_data():
     for key in deploy_info.keys():
         cluster_table_data[key] = [["项目名称", "服务名称", "实例数"]]
         for ns in deploy_info.get(key).keys():
+            if ns == ("testtest-fcp" or "cnspnspace-fcp"):
+                continue
             postfix = ns.split('-')[-1]
             if postfix == 'fcp' or postfix == 'microservice' or postfix == 'backend':
                 for replica_info in deploy_info.get(key).get(ns).items():
@@ -159,6 +167,7 @@ def generate_table_data():
                             tmp.append(namespaces_info[prj_id])
                     tmp += list(replica_info)
                     cluster_table_data[key].append(tmp)
+
         # 合计行
         total = []
         # 统计项目数

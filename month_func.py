@@ -339,13 +339,13 @@ class SetMonthlyReport(object):
         # 表格行数
         row = 9
         # 表格页数初始化
-        pages = 0
-        if len(month_permission_management_data) == 0:
-            pages = 1
-        elif len(month_permission_management_data) % (row - 1):
-            pages = len(month_permission_management_data) // (row - 1) + 1
-        else:
-            pages = len(month_permission_management_data) // (row - 1)
+        pages = len(month_permission_management_data) // (row - 1) + 1
+        # if len(month_permission_management_data) == 0:
+        #     pages = 1
+        # elif len(month_permission_management_data) % (row - 1):
+        #     pages = len(month_permission_management_data) // (row - 1) + 1
+        # else:
+        #     pages = len(month_permission_management_data) // (row - 1)
 
         for page in range(1, pages + 1):
             # 添加一张幻灯片
@@ -427,13 +427,13 @@ class SetMonthlyReport(object):
         # 表格行数
         row = 9
         # 表格页数初始化
-        pages = 0
-        if len(month_cooperation_data) == 0:
-            pages = 1
-        elif len(month_cooperation_data) % (row - 1):
-            pages = len(month_cooperation_data) // (row - 1) + 1
-        else:
-            pages = len(month_cooperation_data) // (row - 1)
+        pages = len(month_cooperation_data) // (row - 1) + 1
+        # if len(month_cooperation_data) == 0:
+        #     pages = 1
+        # elif len(month_cooperation_data) % (row - 1):
+        #     pages = len(month_cooperation_data) // (row - 1) + 1
+        # else:
+        #     pages = len(month_cooperation_data) // (row - 1)
 
         for page in range(1, pages + 1):
             # 添加一张幻灯片
@@ -514,13 +514,13 @@ class SetMonthlyReport(object):
         # 表格行数
         row = 15
         # 表格页数初始化
-        pages = 0
-        if len(month_release_data) == 0:
-            pages = 1
-        elif len(month_release_data) % (row - 1):
-            pages = len(month_release_data) // (row - 1) + 1
-        else:
-            pages = len(month_release_data) // (row - 1)
+        pages = len(month_release_data) // (row - 1) + 1
+        # if len(month_release_data) == 0:
+        #     pages = 1
+        # elif len(month_release_data) % (row - 1):
+        #     pages = len(month_release_data) // (row - 1) + 1
+        # else:
+        #     pages = len(month_release_data) // (row - 1)
 
         for page in range(1, pages + 1):
             # 添加一张幻灯片
@@ -599,13 +599,13 @@ class SetMonthlyReport(object):
         # 表格行数
         row = 9
         # 表格页数初始化
-        pages = 0
-        if len(month_problem_data) == 0:
-            pages = 1
-        elif len(month_problem_data) % (row - 1):
-            pages = len(month_problem_data) // (row - 1) + 1
-        else:
-            pages = len(month_problem_data) // (row - 1)
+        pages = len(month_problem_data) // (row - 1) + 1
+        # if len(month_problem_data) == 0:
+        #     pages = 1
+        # elif len(month_problem_data) % (row - 1):
+        #     pages = len(month_problem_data) // (row - 1) + 1
+        # else:
+        #     pages = len(month_problem_data) // (row - 1)
 
         for page in range(1, pages + 1):
             # 添加一张幻灯片

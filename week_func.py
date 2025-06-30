@@ -156,13 +156,13 @@ class SetWeaklyReport(object):
         # 行数
         row = 15
         # 表格页数初始化
-        pages = 0
-        if len(release_data) == 0:
-            pages = 1
-        elif len(release_data) % (row - 1):
-            pages = len(release_data) // (row - 1) + 1
-        else:
-            pages = len(release_data) // (row - 1)
+        pages = len(release_data) // (row - 1) + 1
+        # if len(release_data) == 0:
+        #     pages = 1
+        # elif len(release_data) % (row - 1):
+        #     pages = len(release_data) // (row - 1) + 1
+        # else:
+        #     pages = len(release_data) // (row - 1)
 
         for page in range(1, pages + 1):
             # 添加一张幻灯片
@@ -249,13 +249,13 @@ class SetWeaklyReport(object):
         # 行数
         row = 9
         # 表格页数初始化
-        pages = 0
-        if len(permission_management_data) == 0:
-            pages = 1
-        elif len(permission_management_data) % (row - 1):
-            pages = len(permission_management_data) // (row - 1) + 1
-        else:
-            pages = len(permission_management_data) // (row - 1)
+        pages = len(permission_management_data) // (row - 1) + 1
+        # if len(permission_management_data) == 0:
+        #     pages = 1
+        # elif len(permission_management_data) % (row - 1):
+        #     pages = len(permission_management_data) // (row - 1) + 1
+        # else:
+        #     pages = len(permission_management_data) // (row - 1)
         for page in range(1, pages + 1):
             # 添加一张幻灯片
             self._prs.slides.add_slide(self._prs.slide_masters[0].slide_layouts[1])
@@ -335,13 +335,13 @@ class SetWeaklyReport(object):
         # 表格行数
         row = 9
         # 表格页数初始化
-        pages = 0
-        if len(cooperation_data) == 0:
-            pages = 1
-        elif len(cooperation_data) % (row - 1):
-            pages = len(cooperation_data) // (row - 1) + 1
-        else:
-            pages = len(cooperation_data) // (row - 1)
+        pages = len(cooperation_data) // (row - 1) + 1
+        # if len(cooperation_data) == 0:
+        #     pages = 1
+        # elif len(cooperation_data) % (row - 1):
+        #     pages = len(cooperation_data) // (row - 1) + 1
+        # else:
+        #     pages = len(cooperation_data) // (row - 1)
 
         for page in range(1, pages + 1):
             # 添加一张幻灯片
@@ -492,14 +492,14 @@ class SetWeaklyReport(object):
             cluster_name = ""
             if cluster == "fcp":
                 cluster_name = "FCP业务集群"
-            elif cluster == "fcp-inner-microservice":
-                cluster_name = "内网微服务区"
-            elif cluster == "fcp-inner-backend":
-                cluster_name = "内网后台区"
-            elif cluster == "fcp-outer-microservice":
-                cluster_name = "外网微服务区"
-            elif cluster == "fcp-outer-backend":
-                cluster_name = "外网后台区"
+            # elif cluster == "fcp-inner-microservice":
+            #     cluster_name = "内网微服务区"
+            # elif cluster == "fcp-inner-backend":
+            #     cluster_name = "内网后台区"
+            # elif cluster == "fcp-outer-microservice":
+            #     cluster_name = "外网微服务区"
+            # elif cluster == "fcp-outer-backend":
+            #     cluster_name = "外网后台区"
             # 集群合计信息
             total_count = table_data[-1]
             # 集群资源已分配数值
