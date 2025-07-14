@@ -276,11 +276,11 @@ def monthly_summary_reports_download(filename):
 @app.route("/weeklyReportsData", methods=["POST"])
 def generate_weekly_report():
     # request.json是一个字典，接收post请求的data数据
-    # {"status": 0,"weeklyData": weeklyData, "formdata": this.formData}
+    # {"status": 0,"weeklyData": weeklyData, "formData": this.formData}
     post_data = request.json
-    year = post_data.get("formdata").get("year")
-    month = post_data.get("formdata").get("month")
-    week = post_data.get("formdata").get("week")
+    year = post_data.get("formData").get("year")
+    month = post_data.get("formData").get("month")
+    week = post_data.get("formData").get("week")
 
     # 初始化运行情况分析ppt中所需所需数据
     cluster_pie_data = {}
@@ -307,7 +307,7 @@ def generate_weekly_report():
         cluster_table_data = post_data["cluster_table_data"]
 
     # 将集群信息数据写入json中
-    with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name, mode="x",
+    with open(app.config["UPLOAD_FOLDER"] + "/historyWeeklyData/" + history_weekly_data_file_name, mode="w+",
               encoding="utf-8") as f:
         f.write(json.dumps(post_data))
 
