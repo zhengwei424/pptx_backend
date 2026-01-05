@@ -68,36 +68,75 @@ def get_deploy_info():
     config.load_kube_config(config_file="config/kubeconfig/config", context=context)
     namespaces = client.CoreV1Api().list_namespace()
     nodes = client.CoreV1Api().list_node()
+    # worker节点(用于daemonset判定副本数量)
+    node_workers_labels = []
     cluster_total_resources[context] = {"cpu": 0, "memory": 0}
     # 通过集群各节点资源计算集群worker节点资源总额（总资源减去master资源）
     for node in nodes.items:
-        cluster_total_resources[context]["cpu"] += int(node.status.capacity.get("cpu"))
-        cluster_total_resources[context]["memory"] += int(node.status.capacity.get("memory").split("Ki")[0])
-    if context == "fcp":
-        cluster_total_resources[context]["cpu"] -= 48 * 3
-        cluster_total_resources[context]["memory"] = cluster_total_resources[context]["memory"] // (
-                1024 * 1024) - 376 * 3
-    else:
-        cluster_total_resources[context]["cpu"] -= 56 * 3
-        cluster_total_resources[context]["memory"] = cluster_total_resources[context]["memory"] // (
-                1024 * 1024) - 251 * 3
+        # 跳过master节点
+        # if node.metadata.labels.get('node-role.kubernetes.io/controlplane') == 'true' and not node.metadata.labels.get('node-role.kubernetes.io/worker'):
+        #     continue
+
+        # 集群资源只计算worker节点，通过node标签判定worker节点
+        if node.metadata.labels.get('node-role.kubernetes.io/worker') == 'true':
+            node_workers_labels.append(node.metadata.labels)
+
+            cluster_total_resources[context]["cpu"] += int(node.status.capacity.get("cpu"))
+
+            # 单位Gi
+            memory = node.status.capacity.get("memory")
+            if memory[-2:] == "Ti":
+                cluster_total_resources[context]["memory"] += int(memory.split("Ti")[0]) * 1024
+            elif memory[-2:] == "Gi":
+                cluster_total_resources[context]["memory"] += int(memory.split("Gi")[0])
+            elif memory[-2:] == "Mi":
+                cluster_total_resources[context]["memory"] += int(memory.split("Mi")[0]) // 1024
+            elif memory[-2:] == "Ki":
+                cluster_total_resources[context]["memory"] += int(memory.split("Ki")[0]) / 1024 // 1024
     # 获取集群namespace
     for namespace in namespaces.items:
-        if namespace.metadata.name == "cnspnspace-fcp":
-            continue
+        # if namespace.metadata.name == "cnspnspace-fcp": # 不忽略容器安全平台
+        #     continue
         namespaces_names.append(namespace.metadata.name)
-    # 获取集群中各namespace的应用部署信息（通过deploy或statefulset的labels标签获取应用名称）以及资源配额
+    # 获取集群中各namespace的应用部署信息（通过deploy、statefulset及daemonset的labels标签获取应用名称）以及资源配额
     for ns in namespaces_names:
         # 集群namespace应用部署信息
         deploy_info[context][ns] = {}
         # 集群namespace资源配额信息
         cluster_namespaces_quota[context][ns] = {"cpu": 0, "memory": 0}
+
         # 绿区fcp集群的statefulset的部署信息
-        if context == "fcp":
-            statefulsets = client.AppsV1Api().list_namespaced_stateful_set(namespace=ns)
-            for sts in statefulsets.items:
-                if sts.metadata.labels.get("app"):
-                    deploy_info[context][ns][sts.metadata.labels.get("app")] = sts.spec.replicas
+        statefulsets = client.AppsV1Api().list_namespaced_stateful_set(namespace=ns)
+        for sts in statefulsets.items:
+            if sts.metadata.labels.get("app"):
+                deploy_info[context][ns][sts.metadata.labels.get("app")] = sts.spec.replicas
+            elif sts.metadata.labels.get("application_name"):
+                deploy_info[context][ns][sts.metadata.labels.get("application_name")] = sts.spec.replicas
+
+        # daemonset部署信息
+        daemonsets = client.ExtensionsV1beta1Api().list_namespaced_daemon_set(namespace=ns)
+        for daemonset in daemonsets.items:
+            # 副本数与标签选择器有关
+            replicas = 0
+
+            # AttributeError: 'V1PodSpec' object has no attribute 'get'
+            # print(daemonset.spec.template.spec.get("node_selector"))
+            if daemonset.spec.template.spec.node_selector:
+                # 有标签就匹配节点标签
+                for item in node_workers_labels:
+                    # items可以判定dict包含关系
+                    if daemonset.spec.template.spec.node_selector.items() <= item.items():
+                        replicas += 1
+
+            else:
+                # 没有标签部署就部署到所有worker节点
+                replicas = len(node_workers_labels)
+
+            if daemonset.metadata.labels.get("application_name"):
+                deploy_info[context][ns][daemonset.spec.template.metadata.labels.get("application_name")] = replicas
+            elif daemonset.metadata.labels.get("app"):
+                deploy_info[context][ns][daemonset.spec.template.metadata.labels.get("app")] = replicas
+
         # 集群deployment的部署信息
         deploys = client.ExtensionsV1beta1Api().list_namespaced_deployment(namespace=ns)
         for deploy in deploys.items:
@@ -114,13 +153,13 @@ def get_deploy_info():
             memory = quota.spec.hard.get("limits.memory")
             cluster_namespaces_quota[context][ns]["cpu"] = int(cpu)
             # 单位Gi
-            if quota.spec.hard.get("limits.memory")[-2:] == "Gi":
+            if memory[-2:] == "Gi":
                 cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Gi")[0])
-            elif quota.spec.hard.get("limits.memory")[-2:] == "Ti":
+            elif memory[-2:] == "Ti":
                 cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Ti")[0]) * 1024
-            elif quota.spec.hard.get("limits.memory")[-2:] == "Mi":
+            elif memory[-2:] == "Mi":
                 cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Mi")[0]) // 1024
-            elif quota.spec.hard.get("limits.memory")[-2:] == "Ki":
+            elif memory[-2:] == "Ki":
                 cluster_namespaces_quota[context][ns]["memory"] = int(memory.split("Ki")[0]) / 1024 // 1024
 
     return deploy_info, cluster_total_resources, cluster_namespaces_quota
