@@ -108,10 +108,11 @@ def get_deploy_info():
         # 绿区fcp集群的statefulset的部署信息
         statefulsets = client.AppsV1Api().list_namespaced_stateful_set(namespace=ns)
         for sts in statefulsets.items:
-            if sts.metadata.labels.get("app"):
-                deploy_info[context][ns][sts.metadata.labels.get("app")] = sts.spec.replicas
-            elif sts.metadata.labels.get("application_name"):
-                deploy_info[context][ns][sts.metadata.labels.get("application_name")] = sts.spec.replicas
+            labels = sts.spec.template.metadata.labels
+            if labels.get("app"):
+                deploy_info[context][ns][labels.get("app")] = sts.spec.replicas
+            elif labels.get("application_name"):
+                deploy_info[context][ns][labels.get("application_name")] = sts.spec.replicas
 
         # daemonset部署信息
         daemonsets = client.ExtensionsV1beta1Api().list_namespaced_daemon_set(namespace=ns)
@@ -132,19 +133,20 @@ def get_deploy_info():
                 # 没有标签部署就部署到所有worker节点
                 replicas = len(node_workers_labels)
 
-            if daemonset.metadata.labels.get("application_name"):
-                deploy_info[context][ns][daemonset.spec.template.metadata.labels.get("application_name")] = replicas
-            elif daemonset.metadata.labels.get("app"):
-                deploy_info[context][ns][daemonset.spec.template.metadata.labels.get("app")] = replicas
+            labels = daemonset.spec.template.metadata.labels
+            if labels.get("application_name"):
+                deploy_info[context][ns][labels.get("application_name")] = replicas
+            elif labels.get("app"):
+                deploy_info[context][ns][labels.get("app")] = replicas
 
         # 集群deployment的部署信息
         deploys = client.ExtensionsV1beta1Api().list_namespaced_deployment(namespace=ns)
         for deploy in deploys.items:
-            # 没label的就舍弃
-            if deploy.metadata.labels.get("application_name"):
-                deploy_info[context][ns][deploy.metadata.labels.get("application_name")] = deploy.spec.replicas
-            elif deploy.metadata.labels.get("app"):
-                deploy_info[context][ns][deploy.metadata.labels.get("app")] = deploy.spec.replicas
+            labels = deploy.spec.template.metadata.labels
+            if labels.get("application_name"):
+                deploy_info[context][ns][labels.get("application_name")] = deploy.spec.replicas
+            elif labels.get("app"):
+                deploy_info[context][ns][labels.get("app")] = deploy.spec.replicas
 
         # 集群namespace资源配额
         quotas = client.CoreV1Api().list_namespaced_resource_quota(namespace=ns)
